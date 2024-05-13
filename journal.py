@@ -23,14 +23,17 @@ from rules import (
 
 # === Character and killer creation ====
 
+
+# === Initialize variables ===
 roll_counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
-
 luck = 1
-favorite_number = 3  # Place holder
-
-
-def roll_two_dice():
-    return random.randint(1, 6), random.randint(1, 6)
+favorite_number = 3
+game_data = {
+    "character": {"archetype": None, "secret": None},
+    "killer": {"mask": None, "weapon": None, "trait": None},
+}
+total_word_count = 0
+max_words = 500
 
 
 def set_game_data():  # Function to get the character archetype based on dice rolls
@@ -46,44 +49,35 @@ def set_game_data():  # Function to get the character archetype based on dice ro
     game_data["killer"]["trait"] = killer_traits[roll1][roll2]
 
 
-game_data = {
-    "character": {"archetype": None, "secret": None},
-    "killer": {"mask": None, "weapon": None, "trait": None},
-}
-
-entry_count = 0
-max_entries = 8
-
-
-def update_journal(text):
-    global entry_count
-    if entry_count < max_entries:
-        journal.config(state=NORMAL)
-        journal.insert(END, text + "\n")
-        journal.config(state=DISABLED)
-        journal.yview(END)
-        entry_count += 1
-    else:
-        prompt_label.config(text="You have run out of space in your journal.")
+# === Helper Functions ===
+def roll_two_dice():
+    return random.randint(1, 6), random.randint(1, 6)
 
 
 def submit_entry():
-    if entry_count < max_entries:
-        entry_text = journal_entry.get()
+    global total_word_count
+    entry_text = journal_entry.get()
+    word_count = len(entry_text.split())
+    new_total = total_word_count + word_count
+    if new_total <= max_words:
         update_journal(entry_text)
-        journal_entry.delete(0, END)
-        prompt_label.config(text="Roll dice to continue...")
+        total_word_count = new_total
+        word_count_progress["value"] = total_word_count
+        journal_entry.delete(0, "end")
     else:
-        prompt_label.config(text="No more entries allowed.")
+        prompt_label.config(
+            text="You cannot exceed 500 words. Please revise your entry."
+        )
 
 
 def update_journal(text):
-    journal.config(state=NORMAL)  # Enable text widget for editing
-    journal.insert(END, text + "\n")  # Append text
-    journal.config(state=DISABLED)  # Disable text widget to prevent user editing
-    journal.yview(END)  # Auto-scroll to the end
+    journal.config(state="normal")
+    journal.insert("end", text + "\n")
+    journal.config(state="disabled")
+    journal.yview("end")
 
 
+# === Luck Logic ===
 def apply_luck_modifier(current_roll):
     global luck
     if luck > 0:
@@ -104,6 +98,7 @@ def apply_luck_modifier(current_roll):
     return current_roll
 
 
+# Roll for prompts
 def roll_dice():
     global luck
     dice_result = roll_two_dice()
@@ -126,11 +121,10 @@ def roll_dice():
         (current_roll, occurrence), "You've exhausted the prompts for this number."
     )
 
-    prompt_label.config(
-        text=f"Your roll: {current_roll} - {current_prompt}. Your luck: {luck}"
-    )
+    prompt_label.config(text=f"Your roll: {current_roll} - {current_prompt}.")
 
 
+# Get's user input for the character description
 def start_game():
     set_game_data()
     prompt_label.config(text="Describe your character: ")
@@ -145,40 +139,55 @@ root.title("One Page Left - Text Based RPG")
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 
-main_interface = ttk.Frame(root, padding=(3, 3, 12, 12))
-main_interface.grid(
-    column=0,
-    row=0,
-)
-main_interface.columnconfigure(0, weight=1)
-main_interface.rowconfigure(0, weight=1)
+main_frame = ttk.Frame(root, padding="3 3 12 12")
+main_frame.grid(column=0, row=0, sticky=("n", "w", "e", "s"))
+main_frame.columnconfigure(0, weight=1)
+main_frame.rowconfigure(0, weight=1)
+main_frame.rowconfigure(1, weight=1)
+main_frame.rowconfigure(2, weight=1)
+main_frame.rowconfigure(3, weight=1)
+main_frame.rowconfigure(4, weight=1)
+main_frame.rowconfigure(5, weight=1)
 
+
+# Prompt label
 prompt_label = ttk.Label(
-    main_interface, text="Click start to begin the game.", wraplength=300
+    main_frame, text="Click start to begin the game.", wraplength=300
 )
-prompt_label.grid(column=0, row=1, sticky=("n", "s", "e", "w"))
+prompt_label.grid(column=0, row=0, sticky=("n", "s", "e", "w"))
 
-button_frame = ttk.Frame(main_interface)
-button_frame.grid(column=0, row=2)
-dice_button = ttk.Button(button_frame, text="Roll Dice", command=roll_dice)
-dice_button.grid(column=1, row=0)
+journal_entry = ttk.Entry(main_frame, width=50)
+journal_entry.grid(column=0, row=2, sticky=("w", "e"))
 
-start_button = ttk.Button(button_frame, text="Start Game", command=start_game)
-start_button.grid(column=2, row=0)
+sidebar_frame = ttk.Frame(main_frame, padding="3 3 12 12")
+sidebar_frame.grid(column=1, row=1, rowspan=5, sticky=("n", "w", "e", "s"))
+sidebar_frame.columnconfigure(0, weight=1)
+sidebar_frame.rowconfigure(0, weight=1)
 
-input_frame = ttk.Frame(main_interface)
-journal_entry = ttk.Entry(input_frame, width=68)
-journal_entry.pack(side=LEFT)
-submit_button = ttk.Button(input_frame, text="Submit", command=submit_entry)
-submit_button.pack(side=LEFT)
-input_frame.grid(column=0, row=3)
+submit_button = ttk.Button(sidebar_frame, text="Submit", command=submit_entry)
+submit_button.grid(column=0, row=0, sticky="w")
 
-journal = Text(main_interface, height=20, width=75, wrap=WORD, state=DISABLED)
-journal.grid(column=0, row=4)
+luck_count_label = ttk.Label(main_frame, text=f"Luck Points: {luck}")
+luck_count_label.grid(column=0, row=1, sticky="w")
 
-killerDescription = StringVar()  # e = ttk.Entry(parent, textvariable=name)
+dice_button = ttk.Button(main_frame, text="Roll Dice", command=roll_dice)
+dice_button.grid(column=0, row=2,)
+
+new_game_button = ttk.Button(main_frame, text="New Game", command=start_game)
+new_game_button.grid(column=1, row=5,)
+
+word_count_progress = ttk.Progressbar(
+    main_frame, orient="horizontal", length=200, mode="determinate", maximum=max_words
+)
+word_count_progress.grid(column=0, row=3, sticky=("w", "e"))
+
+journal = Text(main_frame, height=10, width=50, state="disabled")
+journal.grid(column=0, row=4, sticky=("w", "e"))
+
+# Killer description label
+killerDescription = StringVar()
 killer_description = ttk.Label(
-    root,
+    main_frame,
     text="",
     textvariable=killerDescription,
     wraplength=300,
@@ -186,10 +195,9 @@ killer_description = ttk.Label(
     background="black",
     relief="sunken",
 )
-killer_description.grid(column=0, row=5)
+killer_description.grid(column=0, row=5, sticky=("n", "s", "e", "w"))
 
 root.mainloop()
-
 
 # Step 7: Integrate LLM for story generation
 # - Implement function to fetch story elements from LLM
@@ -213,9 +221,3 @@ root.mainloop()
 
 # Step 12: Write documentation
 # - Create simple documentation on how to install and play the game
-
-# Step 13: Prepare for distribution
-# - Package the game for distribution if planning to share it
-
-# Run the tkinter main loop
-root.mainloop()
