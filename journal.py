@@ -1,6 +1,9 @@
-import tkinter as tk
 import random
 import tkinter.simpledialog as simpledialog
+from tkinter import *
+from tkinter import ttk
+
+# from tkinter import StringVar
 from rules import (
     character_archetypes,
     character_secrets,
@@ -23,7 +26,7 @@ from rules import (
 roll_counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
 
 luck = 1
-favorite_number = 3
+favorite_number = 3  # Place holder
 
 
 def roll_two_dice():
@@ -55,10 +58,10 @@ max_entries = 8
 def update_journal(text):
     global entry_count
     if entry_count < max_entries:
-        journal.config(state=tk.NORMAL)
-        journal.insert(tk.END, text + "\n")
-        journal.config(state=tk.DISABLED)
-        journal.yview(tk.END)
+        journal.config(state=NORMAL)
+        journal.insert(END, text + "\n")
+        journal.config(state=DISABLED)
+        journal.yview(END)
         entry_count += 1
     else:
         prompt_label.config(text="You have run out of space in your journal.")
@@ -68,17 +71,17 @@ def submit_entry():
     if entry_count < max_entries:
         entry_text = journal_entry.get()
         update_journal(entry_text)
-        journal_entry.delete(0, tk.END)
+        journal_entry.delete(0, END)
         prompt_label.config(text="Roll dice to continue...")
     else:
         prompt_label.config(text="No more entries allowed.")
 
 
 def update_journal(text):
-    journal.config(state=tk.NORMAL)  # Enable text widget for editing
-    journal.insert(tk.END, text + "\n")  # Append text
-    journal.config(state=tk.DISABLED)  # Disable text widget to prevent user editing
-    journal.yview(tk.END)  # Auto-scroll to the end
+    journal.config(state=NORMAL)  # Enable text widget for editing
+    journal.insert(END, text + "\n")  # Append text
+    journal.config(state=DISABLED)  # Disable text widget to prevent user editing
+    journal.yview(END)  # Auto-scroll to the end
 
 
 def apply_luck_modifier(current_roll):
@@ -131,38 +134,59 @@ def roll_dice():
 def start_game():
     set_game_data()
     prompt_label.config(text="Describe your character: ")
-    killer_description.config(
-        text=f"Killer wears a {game_data['killer']['mask']} with a {game_data['killer']['weapon']} and is {game_data['killer']['trait']}"
+    killerDescription.set(
+        f"Killer wears a {game_data['killer']['mask']} with a {game_data['killer']['weapon']} and you remember this... {game_data['killer']['trait']}"
     )
 
 
 # === UI ===
-root = tk.Tk()
+root = Tk()
 root.title("One Page Left - Text Based RPG")
+root.columnconfigure(0, weight=1)
+root.rowconfigure(0, weight=1)
 
-prompt_label = tk.Label(root, text="Click start to begin the game.", wraplength=300)
-prompt_label.pack(pady=(10, 0))
-
-killer_description = tk.Label(
-    root, text="", wraplength=300, bg="black", fg="red", font=("Arial", 12)
+main_interface = ttk.Frame(root, padding=(3, 3, 12, 12))
+main_interface.grid(
+    column=0,
+    row=0,
 )
-killer_description.pack(fill=tk.X, side=tk.BOTTOM)
+main_interface.columnconfigure(0, weight=1)
+main_interface.rowconfigure(0, weight=1)
 
-journal = tk.Text(root, height=20, width=75, wrap=tk.WORD, state=tk.DISABLED)
-journal.pack(padx=10, pady=10)
+prompt_label = ttk.Label(
+    main_interface, text="Click start to begin the game.", wraplength=300
+)
+prompt_label.grid(column=0, row=1, sticky=("n", "s", "e", "w"))
 
-input_frame = tk.Frame(root)
-journal_entry = tk.Entry(input_frame, width=68)
-journal_entry.pack(side=tk.LEFT)
-submit_button = tk.Button(input_frame, text="Submit", command=submit_entry)
-submit_button.pack(side=tk.LEFT)
-input_frame.pack()
+button_frame = ttk.Frame(main_interface)
+button_frame.grid(column=0, row=2)
+dice_button = ttk.Button(button_frame, text="Roll Dice", command=roll_dice)
+dice_button.grid(column=1, row=0)
 
-dice_button = tk.Button(root, text="Roll Dice", command=roll_dice)
-dice_button.pack(pady=(0, 10))
+start_button = ttk.Button(button_frame, text="Start Game", command=start_game)
+start_button.grid(column=2, row=0)
 
-start_button = tk.Button(root, text="Start Game", command=start_game)
-start_button.pack(pady=(10, 20))
+input_frame = ttk.Frame(main_interface)
+journal_entry = ttk.Entry(input_frame, width=68)
+journal_entry.pack(side=LEFT)
+submit_button = ttk.Button(input_frame, text="Submit", command=submit_entry)
+submit_button.pack(side=LEFT)
+input_frame.grid(column=0, row=3)
+
+journal = Text(main_interface, height=20, width=75, wrap=WORD, state=DISABLED)
+journal.grid(column=0, row=4)
+
+killerDescription = StringVar()  # e = ttk.Entry(parent, textvariable=name)
+killer_description = ttk.Label(
+    root,
+    text="",
+    textvariable=killerDescription,
+    wraplength=300,
+    foreground="red",
+    background="black",
+    relief="sunken",
+)
+killer_description.grid(column=0, row=5)
 
 root.mainloop()
 
