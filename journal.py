@@ -171,10 +171,16 @@ luck_count_label = ttk.Label(main_frame, text=f"Luck Points: {luck}")
 luck_count_label.grid(column=0, row=1, sticky="w")
 
 dice_button = ttk.Button(main_frame, text="Roll Dice", command=roll_dice)
-dice_button.grid(column=0, row=2,)
+dice_button.grid(
+    column=0,
+    row=2,
+)
 
 new_game_button = ttk.Button(main_frame, text="New Game", command=start_game)
-new_game_button.grid(column=1, row=5,)
+new_game_button.grid(
+    column=1,
+    row=5,
+)
 
 word_count_progress = ttk.Progressbar(
     main_frame, orient="horizontal", length=200, mode="determinate", maximum=max_words
